@@ -1,0 +1,32 @@
+resnet34:
+  num_classes: 4
+  pretrained: false
+  input_channels: 3
+  lr: 0.001
+  batch_size: 32
+  n_epochs: 100
+  optimizer: "adam"
+  scheduler: "cosine"
+  patience: 15
+  weight_decay: 0.0001
+
+mobilenetv2:
+  num_classes: 4
+  pretrained: false
+  input_channels: 3
+  lr: 0.001
+  batch_size: 32
+  n_epochs: 100
+  optimizer: "adam"
+  scheduler: "cosine"
+  patience: 15
+  weight_decay: 0.0001
+
+simple_cnn:
+  num_classes: 4
+  input_channels: 1
+  input_size: 64
+  lr: 0.001
+  batch_size: 32
+  n_epochs: 100
+  patience: 15
