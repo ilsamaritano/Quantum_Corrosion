@@ -1,0 +1,19 @@
+experiments:
+  seed: 42
+  results_dir: "results"
+
+  learning_curve:
+    fractions: [0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+    n_repeats: 3
+    seeds: [42, 123, 456]
+
+  ablation:
+    n_qubits: [2, 4, 6, 8]
+    n_layers: [1, 2, 3, 4, 5]
+    encodings: ["amplitude", "angle"]
+
+  robustness:
+    noise_levels: [0.0, 0.01, 0.05, 0.1, 0.2, 0.5]
+    n_repeats: 3
+
+  models_to_run: ["resnet34", "mobilenetv2", "simple_cnn", "hybrid_quantum"]

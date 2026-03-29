@@ -1,0 +1,31 @@
+dataset:
+  name: "RadarIQCorrosion"
+  data_dir: "data/raw"
+  processed_dir: "data/processed"
+  splits_dir: "data/splits"
+  n_classes: 4
+  class_names: ["healthy", "light_corrosion", "moderate_corrosion", "severe_corrosion"]
+  signal_length: 512
+  sample_rate: 1000
+  n_samples_per_class: 200
+  synthetic: true  # Use synthetic data when real data not available
+
+preprocessing:
+  n_fft: 256
+  hop_length: 64
+  n_mels: null
+  normalize: true
+  target_size: [224, 224]
+
+augmentation:
+  enabled: true
+  jitter_std: 0.01
+  shift_max: 10
+  noise_std: 0.005
+  scale_range: [0.9, 1.1]
+
+splits:
+  train: 0.7
+  val: 0.15
+  test: 0.15
+  seed: 42
