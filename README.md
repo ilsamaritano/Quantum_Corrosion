@@ -218,6 +218,9 @@ Input Features (16-dim PCA)
 | fig10_ablation_study.png | Ablation heatmap + bar chart |
 | fig11_robustness.png | Accuracy vs noise level |
 | fig12_runtime.png | Inference time comparison |
+| fig13_feature_importance.png | Feature importance ranking (NEW) |
+| fig14_circuit_depth.png | Quantum circuit depth vs accuracy (NEW) |
+| fig15_training_convergence.png | Training and validation loss curves (NEW) |
 
 ---
 

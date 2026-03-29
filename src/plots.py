@@ -612,3 +612,182 @@ def plot_runtime_comparison(
     fig.tight_layout()
     _save_or_show(fig, output_path)
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Figure 13 — Feature Importance (NEW)
+# ---------------------------------------------------------------------------
+
+def plot_feature_importance(
+    feature_names: List[str],
+    importance_scores: np.ndarray,
+    output_path: Optional[str | Path] = None,
+    top_n: int = 20,
+) -> plt.Figure:
+    """Figure 13: Horizontal bar chart showing top N feature importances.
+
+    Args:
+        feature_names: List of feature names.
+        importance_scores: 1-D array of importance values (higher = more important).
+        output_path: Optional save path.
+        top_n: Number of top features to display.
+
+    Returns:
+        Matplotlib figure.
+    """
+    # Sort by importance and take top N
+    indices = np.argsort(importance_scores)[::-1][:top_n]
+    top_features = [feature_names[i] for i in indices]
+    top_scores = importance_scores[indices]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    colors = plt.cm.viridis(np.linspace(0.3, 0.9, len(top_features)))  # type: ignore
+    y_pos = np.arange(len(top_features))
+
+    bars = ax.barh(y_pos, top_scores, color=colors, edgecolor="white", linewidth=1)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(top_features, fontsize=9)
+    ax.set_xlabel("Importance Score", fontsize=11)
+    ax.set_title(
+        f"Top {top_n} Feature Importances", fontsize=13, fontweight="bold"
+    )
+    ax.grid(axis="x", alpha=0.3)
+
+    # Add value labels
+    for bar, score in zip(bars, top_scores):
+        ax.text(
+            score + 0.01 * max(top_scores),
+            bar.get_y() + bar.get_height() / 2,
+            f"{score:.3f}",
+            va="center",
+            fontsize=8,
+        )
+
+    fig.tight_layout()
+    _save_or_show(fig, output_path)
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Figure 14 — Quantum Circuit Depth vs Accuracy (NEW)
+# ---------------------------------------------------------------------------
+
+def plot_circuit_depth_vs_accuracy(
+    depth_data: Dict[str, List],
+    output_path: Optional[str | Path] = None,
+) -> plt.Figure:
+    """Figure 14: Line plot showing how quantum circuit depth affects accuracy.
+
+    Args:
+        depth_data: Dictionary with keys "depths", "accuracies", optionally "std_devs".
+        output_path: Optional save path.
+
+    Returns:
+        Matplotlib figure.
+    """
+    depths = depth_data.get("depths", [])
+    accuracies = depth_data.get("accuracies", [])
+    std_devs = depth_data.get("std_devs", None)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    if std_devs is not None:
+        ax.errorbar(
+            depths,
+            accuracies,
+            yerr=std_devs,
+            fmt="o-",
+            color="#9C27B0",
+            ecolor="#E1BEE7",
+            capsize=5,
+            capthick=2,
+            linewidth=2,
+            markersize=8,
+        )
+    else:
+        ax.plot(depths, accuracies, "o-", color="#9C27B0", linewidth=2, markersize=8)
+
+    ax.set_xlabel("Circuit Depth (n_qubits × n_layers)", fontsize=12)
+    ax.set_ylabel("Test Accuracy", fontsize=12)
+    ax.set_title(
+        "Quantum Circuit Depth vs Classification Accuracy",
+        fontsize=13,
+        fontweight="bold",
+    )
+    ax.grid(alpha=0.3)
+    ax.set_ylim(0, 1.05)
+
+    # Add trend annotation
+    if len(depths) > 1 and len(accuracies) > 1:
+        # Simple linear fit for trend
+        z = np.polyfit(depths, accuracies, 1)
+        trend = "increasing" if z[0] > 0 else "decreasing"
+        ax.text(
+            0.05,
+            0.95,
+            f"Trend: {trend}",
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+        )
+
+    fig.tight_layout()
+    _save_or_show(fig, output_path)
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Figure 15 — Training Convergence Comparison (NEW)
+# ---------------------------------------------------------------------------
+
+def plot_training_convergence(
+    history_dict: Dict[str, Dict[str, List]],
+    output_path: Optional[str | Path] = None,
+) -> plt.Figure:
+    """Figure 15: Training and validation loss curves for multiple models.
+
+    Args:
+        history_dict: ``{model_name: {"train_loss": [...], "val_loss": [...]}}``.
+        output_path: Optional save path.
+
+    Returns:
+        Matplotlib figure.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(history_dict)))  # type: ignore
+
+    for color, (name, history) in zip(colors, history_dict.items()):
+        train_loss = history.get("train_loss", [])
+        val_loss = history.get("val_loss", [])
+        epochs = list(range(1, len(train_loss) + 1))
+
+        # Training loss subplot
+        ax1.plot(epochs, train_loss, "-", label=name, color=color, linewidth=2)
+
+        # Validation loss subplot
+        ax2.plot(epochs, val_loss, "-", label=name, color=color, linewidth=2)
+
+    # Configure training loss plot
+    ax1.set_xlabel("Epoch", fontsize=11)
+    ax1.set_ylabel("Training Loss", fontsize=11)
+    ax1.set_title("Training Loss Convergence", fontsize=12, fontweight="bold")
+    ax1.legend(fontsize=9)
+    ax1.grid(alpha=0.3)
+
+    # Configure validation loss plot
+    ax2.set_xlabel("Epoch", fontsize=11)
+    ax2.set_ylabel("Validation Loss", fontsize=11)
+    ax2.set_title("Validation Loss Convergence", fontsize=12, fontweight="bold")
+    ax2.legend(fontsize=9)
+    ax2.grid(alpha=0.3)
+
+    fig.suptitle(
+        "Training Convergence Comparison",
+        fontsize=14,
+        fontweight="bold",
+        y=1.02,
+    )
+    fig.tight_layout()
+    _save_or_show(fig, output_path)
+    return fig
