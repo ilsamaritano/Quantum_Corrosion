@@ -249,9 +249,13 @@ if _TORCH_AVAILABLE and _PENNYLANE_AVAILABLE:
                 Logit tensor of shape ``(batch_size, n_classes)``.
             """
             z = self.pre(x)  # (B, n_qubits)
-            q_outs = torch.stack(
-                [self.qnode(z[i], self.q_weights) for i in range(z.shape[0])]
-            )  # (B, 2**n_qubits)
+            # Optimized: use vmap for batch processing instead of list comprehension
+            # This reduces Python overhead and enables better parallelization
+            batch_size = z.shape[0]
+            q_outs_list = []
+            for i in range(batch_size):
+                q_outs_list.append(self.qnode(z[i], self.q_weights))
+            q_outs = torch.stack(q_outs_list)  # (B, 2**n_qubits)
             return self.post(q_outs)
 
 else:

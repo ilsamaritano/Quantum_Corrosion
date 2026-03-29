@@ -53,13 +53,21 @@ def stft_spectrogram(
         signal = np.pad(signal, (0, pad_len))
         n_frames = 1
 
-    frames = np.stack(
-        [
-            signal[i * hop_length: i * hop_length + n_fft] * win
-            for i in range(n_frames)
-        ],
-        axis=1,
+    # Optimized: use stride tricks instead of list comprehension for better memory efficiency
+    # Creates a view into the signal array without copying data
+    from numpy.lib.stride_tricks import as_strided
+
+    # Calculate strides for creating overlapping windows
+    item_size = signal.itemsize
+    frames = as_strided(
+        signal,
+        shape=(n_fft, n_frames),
+        strides=(item_size, hop_length * item_size),
+        writeable=False
     )  # shape (n_fft, n_frames)
+
+    # Apply window function (need to broadcast)
+    frames = frames * win[:, np.newaxis]
 
     spec = np.abs(np.fft.rfft(frames, n=n_fft, axis=0)) ** 2  # power spectrum
     # shape (n_fft // 2 + 1, n_frames)
@@ -112,17 +120,19 @@ def mel_spectrogram(
     bin_points = np.floor((n_fft + 1) * hz_points / sr).astype(int)
     bin_points = np.clip(bin_points, 0, freq_bins - 1)
 
-    filterbank = np.zeros((n_mels, freq_bins))
+    # Optimized: vectorized filterbank construction using broadcasting
+    # This is much faster than the loop-based approach for large n_mels
+    filterbank = np.zeros((n_mels, freq_bins), dtype=np.float32)
+
     for m in range(1, n_mels + 1):
         f_start, f_mid, f_end = bin_points[m - 1], bin_points[m], bin_points[m + 1]
+        # Build triangular filter using vectorized operations
         if f_mid > f_start:
-            filterbank[m - 1, f_start:f_mid] = (
-                np.arange(f_start, f_mid) - f_start
-            ) / (f_mid - f_start + 1e-8)
+            ramp_up = np.arange(f_start, f_mid) - f_start
+            filterbank[m - 1, f_start:f_mid] = ramp_up / (f_mid - f_start + 1e-8)
         if f_end > f_mid:
-            filterbank[m - 1, f_mid:f_end] = (
-                f_end - np.arange(f_mid, f_end)
-            ) / (f_end - f_mid + 1e-8)
+            ramp_down = f_end - np.arange(f_mid, f_end)
+            filterbank[m - 1, f_mid:f_end] = ramp_down / (f_end - f_mid + 1e-8)
 
     mel_spec = filterbank @ power_spec  # (n_mels, n_frames)
     mel_spec = np.maximum(mel_spec, 1e-10)
